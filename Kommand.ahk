@@ -46,6 +46,9 @@ KMD_Init()
      KMD_Silent := false
      KMD_InitialMode := 2
      KMD_LastMode := 0
+
+     KMD_ViperRepeatCount := 0
+
 }
 
 KMD_ComponentInit(silent)

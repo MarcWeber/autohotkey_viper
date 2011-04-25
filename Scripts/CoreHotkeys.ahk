@@ -6,6 +6,33 @@
 ; This file contains all of the core keybindings for Kommand.
 ;
 
+KMD_IS_VIPER(){
+    global KMD_ViperMode
+    WinGetTitle, Title, A
+    FoundPos := RegExMatch(Title, "GVIM")
+    return KMD_ViperMode == true && FoundPos != ""
+}
+
+KMD_ViperRepeat(digit)
+{
+    global KMD_ViperRepeatCount
+    KMD_ViperRepeatCount := 10 * KMD_ViperRepeatCount + digit
+}
+
+KMD_ViperDoRepeat(tosend)
+{
+    global KMD_ViperRepeatCount
+    if KMD_ViperRepeatCount = 0
+      KMD_ViperRepeatCount:=1
+
+    Loop %KMD_ViperRepeatCount%
+    {
+        Send, %tosend%
+    }
+    KMD_ViperRepeatCount:=0
+}
+
+
 ; Modifiers Keys ================================================== ;
 
 #UseHook on
@@ -21,11 +48,18 @@ return
 
 +Capslock:: SetCapsLockState, % GetKeyState( "CapsLock", "T" ) ? "OFF" : "ON"
 
+r::
+    if KMD_KommandMode == true
+	reload
+    else
+	Send r
+return
+
 #CapsLock::
      if (KMD_Enabled == true)
           if (KMD_Enabled == true)
           {
-               if (KMD_ViperMode == true)
+               if (KMD_IS_VIPER())
                     KMD_StartKommandMode(false)
                else if (KMD_InsertMode == true)
                     KMD_StartViperMode(false)
@@ -46,7 +80,7 @@ return
 #UseHook on
 
 $::
-     if (KMD_ViperMode == true)
+     if (KMD_IS_VIPER())
           Send, {End}
      else
           Send, $
@@ -61,23 +95,44 @@ return
 
 ; Numbers ======================================================= ;
 
+
 0::
-     if (KMD_ViperMode == true)
+     if (KMD_IS_VIPER()){
+	if (KMD_ViperRepeat > 0)
+		KMD_ViperRepeat(0)
+	else
           Send, {Home}
-     else
+     } else
           Send, 0
+return
+
+1::
+2::
+3::
+4::
+5::
+6::
+7::
+8::
+9::
+	if (KMD_IS_VIPER()){
+		KMD_ViperRepeat(A_ThisHotkey)
+	} else {
+	    Send, %A_ThisHotkey%
+	}
+        
 return
 
 ; Letters ======================================================= ;
 
 a::
-     if (KMD_ViperMode == true)
+     if (KMD_IS_VIPER())
      {
           if (WinActive("ahk_class CabinetWClass"))
                Send, ^+n
           else
           {
-               Send, {Right}
+               KMD_ViperDoRepeat("{Right}")
                KMD_StartInsertMode(true)
           }
      }
@@ -86,25 +141,26 @@ a::
 return
 
 +a::
-     if (KMD_ViperMode == true)
+     if (KMD_IS_VIPER())
      {
           Send, {End}
           KMD_StartInsertMode(true)
      }
      else
           Send, +a
-return
+return 
 
 b::
-     if (KMD_ViperMode == true)
-          Send, ^{Left}
+
+     if (KMD_IS_VIPER())
+          KMD_ViperDoRepeat("^{Left}")
      else
           Send, b
 return
 
 ^b::
-     if (KMD_ViperMode == true)
-          Send, {Page down}
+     if (KMD_IS_VIPER())
+          KMD_ViperDoRepeat("{Page down}")
      else if (KMD_KommandMode == true)
      {
           WinSet, AlwaysOnTop, Off, A
@@ -115,9 +171,9 @@ return
 return
 
 +c::
-     if (KMD_ViperMode == true)
+     if (KMD_IS_VIPER())
      {
-          Send, {Shift down}{End}{Delete}
+          KMD_ViperDoRepeat("{Shift down}{End}{Delete}")
           KMD_StartInsertMode(true)
      }
      else
@@ -125,8 +181,8 @@ return
 return
 
 d::
-     if ((KMD_ViperMode == true) && (WinActive("ahk_class CabinetWClass")))
-          Send, {Delete}
+     if ((KMD_IS_VIPER()) && (WinActive("ahk_class CabinetWClass")))
+          KMD_ViperDoRepeat("{Delete}")
      else if (KMD_KommandMode == true)
           WinClose A
      else
@@ -141,15 +197,15 @@ return
 return
 
 ^d::
-     if (KMD_ViperMode == true)
-          Send, {Page down}
+     if (KMD_IS_VIPER())
+          KMD_ViperDoRepeat("{Page down}")
      else
           Send ^d
 return
 
 ^f::
-     if (KMD_ViperMode == true)
-          Send, {Page down}
+     if (KMD_IS_VIPER())
+          KMD_ViperDoRepeat("{Page down}")
      else if (KMD_KommandMode == true)
 		WinSet, AlwaysOnTop, Toggle, A
      else
@@ -157,8 +213,8 @@ return
 return
 
 h::
-     if (KMD_ViperMode == true)
-          Send, {Left}
+     if (KMD_IS_VIPER())
+          KMD_ViperDoRepeat("{Left}")
      else if (KMD_KommandMode == true)
           WindowPadMove("-1,  0,  0.5, 1.0")
      else
@@ -166,7 +222,7 @@ h::
 return
 
 +h::
-     if ((KMD_ViperMode == true) && WinActive("ahk_class CabinetWClass"))
+     if ((KMD_IS_VIPER()) && WinActive("ahk_class CabinetWClass"))
           Send, !{Left}
      else if (KMD_KommandMode == true)
           WinMaximize, A
@@ -175,16 +231,16 @@ return
 return
 
 i::
-     if ((KMD_ViperMode == true) OR (KMD_KommandMode == true))
+     if ((KMD_IS_VIPER()) OR (KMD_KommandMode == true))
           KMD_StartInsertMode(true)
      else
           Send, i
 return
 
 +i::
-     if (KMD_ViperMode == true)
+     if (KMD_IS_VIPER())
      {
-          Send, {Home}
+          KMD_ViperDoRepeat("{Home}")
           KMD_StartInsertMode(true)
      }
      else
@@ -192,8 +248,8 @@ return
 return
 
 j::
-     if (KMD_ViperMode == true)
-          Send, {Down}
+     if (KMD_IS_VIPER())
+          KMD_ViperDoRepeat("{Down}")
      else if (KMD_KommandMode == true)
           WindowPadMove("0, +1,  1.0, 0.5")
      else
@@ -201,15 +257,15 @@ j::
 return
 
 +j::
-     if ((KMD_ViperMode == true) && (WinActive("ahk_class CabinetWClass")))
-          Send, {Enter}
+     if ((KMD_IS_VIPER()) && (WinActive("ahk_class CabinetWClass")))
+          KMD_ViperDoRepeat("{Enter}")
      else
           Send, +j
 return
 
 k::
-     if (KMD_ViperMode == true)
-          Send, {Up}
+     if (KMD_IS_VIPER())
+          KMD_ViperDoRepeat("{Up}")
      else if (KMD_KommandMode == true)
           WindowPadMove("0, -1,  1.0, 0.5")
      else
@@ -217,22 +273,22 @@ k::
 return
 
 +k::
-     if ((KMD_ViperMode == true) && (WinActive("ahk_class CabinetWClass")))
-          Send, !{Up}
+     if ((KMD_IS_VIPER()) && (WinActive("ahk_class CabinetWClass")))
+          KMD_ViperDoRepeat("!{Up}")
      else
           Send, +k
 return
 
 ^k::
-     if (KMD_ViperMode == true)
+     if (KMD_IS_VIPER())
           KMD_StartKommandMode(false)
      else
           Send, ^k
 return
 
 l::
-     if (KMD_ViperMode == true)
-          Send, {Right}
+     if (KMD_IS_VIPER())
+          KMD_ViperDoRepeat("{Right}")
      else if (KMD_KommandMode == true)
           WindowPadMove("+1,  0,  0.5, 1.0")
      else
@@ -240,8 +296,8 @@ l::
 return
 
 +l::
-     if ((KMD_ViperMode == true) && (WinActive("ahk_class CabinetWClass")))
-          Send, !{Right}
+     if ((KMD_IS_VIPER()) && (WinActive("ahk_class CabinetWClass")))
+          KMD_ViperDoRepeat("!{Right}")
      if (KMD_KommandMode == true)
           WinMinimize, A
      else
@@ -273,10 +329,11 @@ return
 return
 
 o::
-     if (KMD_ViperMode == true)
+     if (KMD_IS_VIPER())
      {
           Send, {End}{Enter}
           KMD_StartInsertMode(true)
+	  KMD_ViperRepeatCount := 0
      }
      else if (KMD_KommandMode == true)
           WindowScreenMove(Next)
@@ -285,10 +342,11 @@ o::
 return
 
 +o::
-     if (KMD_ViperMode == true)
+     if (KMD_IS_VIPER())
      {
           Send, {Home}{Enter}{Up}
           KMD_StartInsertMode(true)
+	  KMD_ViperRepeatCount := 0
      }
      else if (KMD_KommandMode == true)
           WindowScreenMove(Next)
@@ -304,20 +362,22 @@ return
 return
 
 s::
-     if (KMD_ViperMode == true)
+     if (KMD_IS_VIPER())
      {
           Send, {Delete}
           KMD_StartInsertMode(true)
+	  KMD_ViperRepeatCount := 0
      }
      else
           Send, s
 return
 
 +s::
-     if (KMD_ViperMode == true)
+     if (KMD_IS_VIPER())
      {
           Send, {End}{Shift down}{Home}{Shift up}{Delete}
           KMD_StartInsertMode(true)
+	  KMD_ViperRepeatCount := 0
      }
      else
           Send, +s
@@ -337,15 +397,15 @@ return
 return
 
 u::
-     if (KMD_ViperMode == true)
-          Send, ^z
+     if (KMD_IS_VIPER())
+          KMD_ViperDoRepeat("^z")
      else
           Send, u
 return
 
 ^u::
-     if (KMD_ViperMode == true)
-          Send, {Page up}
+     if (KMD_IS_VIPER())
+          KMD_ViperDoRepeat("{Page up}")
      else
           Send, ^u
 return
@@ -365,7 +425,7 @@ return
 return
 
 w::
-     if (KMD_ViperMode == true)
+     if (KMD_IS_VIPER())
      {
           if (WinActive("ahk_class CabinetWClass"))
           {
@@ -383,22 +443,22 @@ w::
                     PostMessage, 0×111, 28931,,, A
           }
           else
-               Send, ^{Right}
+               KMD_ViperDoRepeat("{Right}")
      }
      else
-          Send, w
+          KMD_ViperDoRepeat("w")
 return
 
 x::
-     if (KMD_ViperMode == true)
-          Send, {Delete}
+     if (KMD_IS_VIPER())
+          KMD_ViperDoRepeat("{Delete}")
      else
           Send, x
 return
 
 +x::
-     if (KMD_ViperMode == true)
-          Send, {Backspace}
+     if (KMD_IS_VIPER())
+          KMD_ViperDoRepeat("{Backspace}")
      else
           Send, +x
 return
