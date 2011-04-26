@@ -1,0 +1,9 @@
+This project implements vi like keys for any arbitrary editor like app on
+windows as far as possible.
+
+Eg w es emulated by <c-right> and e is emulated by <c-right> <left>
+
+This is a rewrite of 
+  http://www.autohotkey.com/forum/topic44762.html
+
+cleaning up the code removing much repetition.

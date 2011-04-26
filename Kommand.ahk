@@ -11,22 +11,36 @@
 ; Author: Kylir Horton <kylirh@gmail.com>
 ; Website: http://www.kylirhorton.com/kommand
 ;
-; This is the main executable file for Kommand. All other files are loaded from this one and some basic functions and global variables are defined.
+; This is the main executable file for Kommand. All other files are loaded from
+; this one and some basic functions and global variables are defined.
 ;
+; Mon Apr 25 05:23:15 CEST 2011
+; heavily modified by Marc Weber:
+; Vi: support running actions n times
+; refactor modes to make code more scalable and more maintainable
+
 
 #NoEnv ; Recommended for performance and compatibility with future AutoHotkey releases.
 #SingleInstance, Force ; Make sure there is only one instance of Kommand running at a time.
 #WinActivateForce ; Forces windows to appear when they're called.
 
+
+; include modes
+#Include Modes\Disabled.ahk
+#Include Modes\Vi.ahk
+
 ; Initialize Kommand and load custom logic and supporting functions.
 KMD_Init()
-#Include Custom\CustomLogic.ahk
-#Include Scripts\WindowPad.ahk
+KMD_SetMode("vi_normal_mode")
+; #Include Custom\CustomLogic.ahk
+; #Include Scripts\WindowPad.ahk
 
 ; Initialize the script and load hotkeys.
-KMD_ComponentInit(false)
-#Include Scripts\CoreHotkeys.ahk
-#Include Custom\CustomHotkeys.ahk
+; KMD_ComponentInit(false)
+; #Include Scripts\CoreHotkeys.ahk
+; #Include Custom\CustomHotkeys.ahk
+
+
 return
 
 KMD_Init()
@@ -38,128 +52,395 @@ KMD_Init()
      SetBatchlines, -1 ; Make the script run as fast as possible.
      SetKeyDelay, -1 ; Make sure it is fast!
 
-     ; Set the initial variables.
-     KMD_Enabled := true
-     KMD_InsertMode := false
-     KMD_KommandMode := false
-     KMD_ViperMode := false
-     KMD_Silent := false
-     KMD_InitialMode := 2
-     KMD_LastMode := 0
+     KMD_SENDING := 0
 
-     KMD_ViperRepeatCount := 0
+     KMD_Modes := Object()
 
+     KMD_Modes["vi_normal_mode"] := vi_normal_mode
+     KMD_Modes["disabled"] := disabled_mode
+
+     KMD_Mode := "disabled"
+     start_disabled_mode()
 }
 
-KMD_ComponentInit(silent)
+KMD_Send(keys)
 {
-     global
-     if (KMD_Enabled == true)
-     {
-          SetCapsLockState, Off
-          KMD_LastMode := 0
-
-          if (KMD_InitialMode == 1)
-               KMD_StartInsertMode(silent)
-          else if (KMD_InitialMode == 2)
-               KMD_StartKommandMode(silent)
-          else if (KMD_InitialMode == 3)
-               KMD_StartViperMode(silent)
-          else
-               KMD_StartViperMode(silent)
-     }
+  global KMD_SENDING
+  KMD_SENDING :=1
+  Send, %keys%
+  KMD_SENDING :=0
 }
 
-KMD_StartInsertMode(silent)
-{
-     global
-     if (KMD_Enabled == true)
-     {
-          KMD_InsertMode := true
-          KMD_KommandMode := false
-          KMD_ViperMode := false
-          Menu, Tray, Icon, %A_ScriptDir%\Images\Insert.ico, 0, 1
-          if ((KMD_Silent == false) && (silent == false))
-               ShowMessage("Insert Mode", "Keystrokes are now passed through.", "Insert.png")
-     }
-}
+KMD_SetMode(mode){
+  global KMD_Mode
 
-KMD_StartKommandMode(silent)
-{
-     global
-     if (KMD_Enabled == true)
-     {
-          KMD_InsertMode := false
-          KMD_KommandMode := true
-          KMD_ViperMode := false
-          Menu, Tray, Icon, %A_ScriptDir%\Images\Kommand.ico, 0, 1
-          if ((KMD_Silent == false) && (silent == false))
-               ShowMessage("Kommand Mode", "Window management keybindings are enabled.", "Kommand.png")
-     }
-}
+  if KMD_Mode != ""
+    KMD_Modes[KMD_Mode]["end"]()
 
-KMD_StartViperMode(silent)
-{
-     global
-     if (KMD_Enabled == true)
-     {
-          KMD_InsertMode := false
-          KMD_KommandMode := false
-          KMD_ViperMode := true
-          Menu, Tray, Icon, %A_ScriptDir%\Images\Viper.ico, 0, 1
-          if ((KMD_Silent == false) && (silent == false))
-               ShowMessage("Viper Mode", "Some Vi keybindings are enabled.", "Viper.png")
-     }
-}
+  ; set early so that "start" can switch mode again
+  KMD_Mode := mode
+  KMD_Modes[mode]["start"]()
 
-KMD_Disable(silent)
-{
-     global
-     if (KMD_Enabled == true)
-     {
-          KMD_Enabled := false
-          KMD_InsertMode := false
-          KMD_KommandMode := false
-          KMD_ViperMode := false
-          Menu, Tray, Icon, %A_ScriptDir%\Images\Disabled.ico, 0, 1
-          if ((KMD_Silent == false) && (silent == false))
-               ShowMessage("Disabled", "Kommand is now disabled.", "Disabled.png")
-     }
 }
-
-KMD_Enable(silent)
-{
-     global
-     if (KMD_Enabled == false)
-     {
-          KMD_Enabled := true
-          KMD_ComponentInit(silent)
-     }
-}
-
+    
 ShowMessage(title, message, icon)
 {
-     Run Utilities\SnarlCMD.exe snShowMessage 5 "%title%" "%message%" "%A_ScriptDir%\Images\%icon%",,UseErrorLevel
+  Run Utilities\SnarlCMD.exe snShowMessage 5 "%title%" "%message%" "%A_ScriptDir%\Images\%icon%",,UseErrorLevel
 }
 
-RunAndFocus(command)
-{
-     Run %command%,,UseErrorLevel
-     if (A_LastError == 0)
-          WinActivate
-}
+; Boy this is insane!
+; But its the onlsy modular way which came to my mind!
 
-RunAndFocusInMode(command, mode)
-{
-     Run %command%,,UseErrorLevel
-     if (A_LastError == 0)
-     {
-          WinActivate
-          if (mode == 1)
-               KMD_StartInsertMode(true)
-          else if (mode == 2)
-               KMD_StartKommandMode(true)
-          else
-               KMD_StartViperMode(true)
-     }
-}
+#if (KMD_SENDING == 0)
+
+0::
+  KMD_Modes[KMD_Mode]["handle_keys"]("0")
+return
+1::
+  KMD_Modes[KMD_Mode]["handle_keys"]("1")
+return
+2::
+  KMD_Modes[KMD_Mode]["handle_keys"]("2")
+return
+3::
+  KMD_Modes[KMD_Mode]["handle_keys"]("3")
+return
+4::
+  KMD_Modes[KMD_Mode]["handle_keys"]("4")
+return
+5::
+  KMD_Modes[KMD_Mode]["handle_keys"]("5")
+return
+6::
+  KMD_Modes[KMD_Mode]["handle_keys"]("6")
+return
+7::
+  KMD_Modes[KMD_Mode]["handle_keys"]("7")
+return
+8::
+  KMD_Modes[KMD_Mode]["handle_keys"]("8")
+return
+9::
+  KMD_Modes[KMD_Mode]["handle_keys"]("9")
+return
+
+$::
+  KMD_Modes[KMD_Mode]["handle_keys"]("$")
+return
+
+a::
+  KMD_Modes[KMD_Mode]["handle_keys"]("a")
+return
+b::
+  KMD_Modes[KMD_Mode]["handle_keys"]("b")
+return
+c::
+  KMD_Modes[KMD_Mode]["handle_keys"]("c")
+return
+d::
+  KMD_Modes[KMD_Mode]["handle_keys"]("d")
+return
+e::
+  KMD_Modes[KMD_Mode]["handle_keys"]("e")
+return
+f::
+  KMD_Modes[KMD_Mode]["handle_keys"]("f")
+return
+g::
+  KMD_Modes[KMD_Mode]["handle_keys"]("g")
+return
+h::
+  KMD_Modes[KMD_Mode]["handle_keys"]("h")
+return
+i::
+  KMD_Modes[KMD_Mode]["handle_keys"]("i")
+return
+j::
+  KMD_Modes[KMD_Mode]["handle_keys"]("j")
+return
+k::
+  KMD_Modes[KMD_Mode]["handle_keys"]("k")
+return
+l::
+  KMD_Modes[KMD_Mode]["handle_keys"]("l")
+return
+m::
+  KMD_Modes[KMD_Mode]["handle_keys"]("m")
+return
+n::
+  KMD_Modes[KMD_Mode]["handle_keys"]("n")
+return
+o::
+  KMD_Modes[KMD_Mode]["handle_keys"]("o")
+return
+p::
+  KMD_Modes[KMD_Mode]["handle_keys"]("p")
+return
+q::
+  KMD_Modes[KMD_Mode]["handle_keys"]("q")
+return
+r::
+  KMD_Modes[KMD_Mode]["handle_keys"]("r")
+return
+s::
+  KMD_Modes[KMD_Mode]["handle_keys"]("s")
+return
+t::
+  KMD_Modes[KMD_Mode]["handle_keys"]("t")
+return
+u::
+  KMD_Modes[KMD_Mode]["handle_keys"]("u")
+return
+v::
+  KMD_Modes[KMD_Mode]["handle_keys"]("v")
+return
+w::
+  KMD_Modes[KMD_Mode]["handle_keys"]("w")
+return
+x::
+  KMD_Modes[KMD_Mode]["handle_keys"]("x")
+return
+y::
+  KMD_Modes[KMD_Mode]["handle_keys"]("y")
+return
+z::
+  KMD_Modes[KMD_Mode]["handle_keys"]("z")
+return
+
++a::
+  KMD_Modes[KMD_Mode]["handle_keys"]("+a")
+return
++b::
+  KMD_Modes[KMD_Mode]["handle_keys"]("+b")
+return
++c::
+  KMD_Modes[KMD_Mode]["handle_keys"]("+c")
+return
++d::
+  KMD_Modes[KMD_Mode]["handle_keys"]("+d")
+return
++e::
+  KMD_Modes[KMD_Mode]["handle_keys"]("+e")
+return
++f::
+  KMD_Modes[KMD_Mode]["handle_keys"]("+f")
+return
++g::
+  KMD_Modes[KMD_Mode]["handle_keys"]("+g")
+return
++h::
+  KMD_Modes[KMD_Mode]["handle_keys"]("+h")
+return
++i::
+  KMD_Modes[KMD_Mode]["handle_keys"]("+i")
+return
++j::
+  KMD_Modes[KMD_Mode]["handle_keys"]("+j")
+return
++k::
+  KMD_Modes[KMD_Mode]["handle_keys"]("+k")
+return
++l::
+  KMD_Modes[KMD_Mode]["handle_keys"]("+l")
+return
++m::
+  KMD_Modes[KMD_Mode]["handle_keys"]("+m")
+return
++n::
+  KMD_Modes[KMD_Mode]["handle_keys"]("+n")
+return
++o::
+  KMD_Modes[KMD_Mode]["handle_keys"]("+o")
+return
++p::
+  KMD_Modes[KMD_Mode]["handle_keys"]("+p")
+return
++q::
+  KMD_Modes[KMD_Mode]["handle_keys"]("+q")
+return
++r::
+  KMD_Modes[KMD_Mode]["handle_keys"]("+r")
+return
++s::
+  KMD_Modes[KMD_Mode]["handle_keys"]("+s")
+return
++t::
+  KMD_Modes[KMD_Mode]["handle_keys"]("+t")
+return
++u::
+  KMD_Modes[KMD_Mode]["handle_keys"]("+u")
+return
++v::
+  KMD_Modes[KMD_Mode]["handle_keys"]("+v")
+return
++w::
+  KMD_Modes[KMD_Mode]["handle_keys"]("+w")
+return
++x::
+  KMD_Modes[KMD_Mode]["handle_keys"]("+x")
+return
++y::
+  KMD_Modes[KMD_Mode]["handle_keys"]("+y")
+return
++z::
+  KMD_Modes[KMD_Mode]["handle_keys"]("+z")
+return
+
+; Does not work :-( try alt-d in notepad!
+; !a::
+;   KMD_Modes[KMD_Mode]["handle_keys"]("!a")
+; return
+; !b::
+;   KMD_Modes[KMD_Mode]["handle_keys"]("!b")
+; return
+; !c::
+;   KMD_Modes[KMD_Mode]["handle_keys"]("!c")
+; return
+; !d::
+;   KMD_Modes[KMD_Mode]["handle_keys"]("!d")
+; return
+; !e::
+;   KMD_Modes[KMD_Mode]["handle_keys"]("!e")
+; return
+; !f::
+;   KMD_Modes[KMD_Mode]["handle_keys"]("!f")
+; return
+; !g::
+;   KMD_Modes[KMD_Mode]["handle_keys"]("!g")
+; return
+; !h::
+;   KMD_Modes[KMD_Mode]["handle_keys"]("!h")
+; return
+; !i::
+;   KMD_Modes[KMD_Mode]["handle_keys"]("!i")
+; return
+; !j::
+;   KMD_Modes[KMD_Mode]["handle_keys"]("!j")
+; return
+; !k::
+;   KMD_Modes[KMD_Mode]["handle_keys"]("!k")
+; return
+; !l::
+;   KMD_Modes[KMD_Mode]["handle_keys"]("!l")
+; return
+; !m::
+;   KMD_Modes[KMD_Mode]["handle_keys"]("!m")
+; return
+; !n::
+;   KMD_Modes[KMD_Mode]["handle_keys"]("!n")
+; return
+; !o::
+;   KMD_Modes[KMD_Mode]["handle_keys"]("!o")
+; return
+; !p::
+;   KMD_Modes[KMD_Mode]["handle_keys"]("!p")
+; return
+; !q::
+;   KMD_Modes[KMD_Mode]["handle_keys"]("!q")
+; return
+; !r::
+;   KMD_Modes[KMD_Mode]["handle_keys"]("!r")
+; return
+; !s::
+;   KMD_Modes[KMD_Mode]["handle_keys"]("!s")
+; return
+; !t::
+;   KMD_Modes[KMD_Mode]["handle_keys"]("!t")
+; return
+; !u::
+;   KMD_Modes[KMD_Mode]["handle_keys"]("!u")
+; return
+; !v::
+;   KMD_Modes[KMD_Mode]["handle_keys"]("!v")
+; return
+; !w::
+;   KMD_Modes[KMD_Mode]["handle_keys"]("!w")
+; return
+; !x::
+;   KMD_Modes[KMD_Mode]["handle_keys"]("!x")
+; return
+; !y::
+;   KMD_Modes[KMD_Mode]["handle_keys"]("!y")
+; return
+; !z::
+;   KMD_Modes[KMD_Mode]["handle_keys"]("!z")
+; return
+
+^a::
+  KMD_Modes[KMD_Mode]["handle_keys"]("^a")
+return
+^b::
+  KMD_Modes[KMD_Mode]["handle_keys"]("^b")
+return
+^c::
+  KMD_Modes[KMD_Mode]["handle_keys"]("^c")
+return
+^d::
+  KMD_Modes[KMD_Mode]["handle_keys"]("^d")
+return
+^e::
+  KMD_Modes[KMD_Mode]["handle_keys"]("^e")
+return
+^f::
+  KMD_Modes[KMD_Mode]["handle_keys"]("^f")
+return
+^g::
+  KMD_Modes[KMD_Mode]["handle_keys"]("^g")
+return
+^h::
+  KMD_Modes[KMD_Mode]["handle_keys"]("^h")
+return
+^i::
+  KMD_Modes[KMD_Mode]["handle_keys"]("^i")
+return
+^j::
+  KMD_Modes[KMD_Mode]["handle_keys"]("^j")
+return
+^k::
+  KMD_Modes[KMD_Mode]["handle_keys"]("^k")
+return
+^l::
+  KMD_Modes[KMD_Mode]["handle_keys"]("^l")
+return
+^m::
+  KMD_Modes[KMD_Mode]["handle_keys"]("^m")
+return
+^n::
+  KMD_Modes[KMD_Mode]["handle_keys"]("^n")
+return
+^o::
+  KMD_Modes[KMD_Mode]["handle_keys"]("^o")
+return
+^p::
+  KMD_Modes[KMD_Mode]["handle_keys"]("^p")
+return
+^q::
+  KMD_Modes[KMD_Mode]["handle_keys"]("^q")
+return
+^r::
+  KMD_Modes[KMD_Mode]["handle_keys"]("^r")
+return
+^s::
+  KMD_Modes[KMD_Mode]["handle_keys"]("^s")
+return
+^t::
+  KMD_Modes[KMD_Mode]["handle_keys"]("^t")
+return
+^u::		
+  KMD_Modes[KMD_Mode]["handle_keys"]("^u")
+return
+^v::
+  KMD_Modes[KMD_Mode]["handle_keys"]("^v")
+return
+^w::
+  KMD_Modes[KMD_Mode]["handle_keys"]("^w")
+return
+^x::
+  KMD_Modes[KMD_Mode]["handle_keys"]("^x")
+return
+^y::
+  KMD_Modes[KMD_Mode]["handle_keys"]("^y")
+return
+^z::
+  KMD_Modes[KMD_Mode]["handle_keys"]("^z")
+return
