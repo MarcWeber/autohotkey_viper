@@ -49,6 +49,10 @@ vi_normal_mode_handle_keys(key){
   } else if (vi_normal_mode["simple_commands"].HasKey(key)) {
     KMD_ViperDoRepeat(vi_normal_mode["simple_commands"][key])
     return
+  } else if (vi_normal_mode["goto_insert_mode"].HasKey(key)) {
+    KMD_ViperDoRepeat(vi_normal_mode["simple_commands"][key])
+    KMD_SetMode("vi_insert_mode");
+    return
   }
 
   ; drop repeat count
@@ -65,21 +69,28 @@ vi_normal_mode["repeat_count"] := 0
 vi_normal_mode["handle_keys"] := "vi_normal_mode_handle_keys"
 
 vi_normal_mode["simple_commands"] := {}
-vi_normal_mode["simple_commands"]["h" ] := "{Left}"
-vi_normal_mode["simple_commands"]["j" ] := "{Down}"
-vi_normal_mode["simple_commands"]["k" ] := "{Up}"
-vi_normal_mode["simple_commands"]["l" ] := "{Right}"
+vi_normal_mode["simple_commands"]["h"] := "{Left}"
+vi_normal_mode["simple_commands"]["j"] := "{Down}"
+vi_normal_mode["simple_commands"]["k"] := "{Up}"
+vi_normal_mode["simple_commands"]["l"] := "{Right}"
 
-vi_normal_mode["simple_commands"]["w" ] := "^{Right}"
-vi_normal_mode["simple_commands"]["e" ] := "^{Right}{Left}"
-vi_normal_mode["simple_commands"]["b" ] := "^{Left}"
+vi_normal_mode["simple_commands"]["w"] := "^{Right}"
+vi_normal_mode["simple_commands"]["e"] := "^{Right}{Left}"
+vi_normal_mode["simple_commands"]["b"] := "^{Left}"
 
-vi_normal_mode["simple_commands"]["$" ]  := "{END}"
-vi_normal_mode["simple_commands"]["^u" ] := "{PgUp}"
-vi_normal_mode["simple_commands"]["^d" ] := "{PgDn}"
-vi_normal_mode["simple_commands"]["+g" ] := "^{End}"
-vi_normal_mode["simple_commands"]["u" ]  := "^z"
+vi_normal_mode["simple_commands"]["$"]  := "{END}"
+vi_normal_mode["simple_commands"]["^u"] := "{PgUp}"
+vi_normal_mode["simple_commands"]["^d"] := "{PgDn}"
+vi_normal_mode["simple_commands"]["+g"] := "^{End}"
+vi_normal_mode["simple_commands"]["u"]  := "^z"
 
+vi_normal_mode["goto_insert_mode"] := {}
+vi_normal_mode["goto_insert_mode"]["o"] = "{End}{Enter}"
+vi_normal_mode["goto_insert_mode"]["O"] = "{Up}{End}{Enter}"
+vi_normal_mode["goto_insert_mode"]["i"] = ""
+vi_normal_mode["goto_insert_mode"]["+i"] = "{Home}"
+vi_normal_mode["goto_insert_mode"]["a"] = "{Right}"
+vi_normal_mode["goto_insert_mode"]["+a"] = "{End}"
 
 ; vi_normal_mode["app_depending_commands"] := {}
 ; vi_normal_mode["app_depending_commands"]["CodeGear"] := {}

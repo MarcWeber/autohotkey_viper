@@ -27,7 +27,8 @@
 
 ; include modes
 #Include Modes\Disabled.ahk
-#Include Modes\Vi.ahk
+#Include Modes\ViNormalMode.ahk
+#Include Modes\ViInsertMode.ahk
 
 ; Initialize Kommand and load custom logic and supporting functions.
 KMD_Init()
@@ -56,6 +57,7 @@ KMD_Init()
      KMD_Modes := Object()
 
      KMD_Modes["vi_normal_mode"] := vi_normal_mode
+     KMD_Modes["vi_insert_mode"] := vi_insert_mode
      KMD_Modes["disabled"] := disabled_mode
 
      KMD_Mode := "disabled"
