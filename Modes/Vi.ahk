@@ -1,7 +1,6 @@
 start_vi_normal_mode(){
   global vi_normal_mode
   vi_normal_mode["repeat_count"] := 0
-  Menu, Tray, Icon, %A_ScriptDir%\Images\Viper.ico, 0, 1
 }
 
 end_vi_normal_mode(){
@@ -47,8 +46,7 @@ vi_normal_mode_handle_keys(key){
   {
     vi_normal_mode["repeat_count"] := vi_normal_mode["repeat_count"] * 10 + key
     return
-  } else if (vi_normal_mode["simple_commands"].HasKey(key))
-    vi_normal_mode["simple_commands"] := {}
+  } else if (vi_normal_mode["simple_commands"].HasKey(key)) {
     KMD_ViperDoRepeat(vi_normal_mode["simple_commands"][key])
     return
   }

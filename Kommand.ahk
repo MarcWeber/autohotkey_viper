@@ -31,7 +31,6 @@
 
 ; Initialize Kommand and load custom logic and supporting functions.
 KMD_Init()
-KMD_SetMode("vi_normal_mode")
 ; #Include Custom\CustomLogic.ahk
 ; #Include Scripts\WindowPad.ahk
 
@@ -80,13 +79,23 @@ KMD_SetMode(mode){
   ; set early so that "start" can switch mode again
   KMD_Mode := mode
   KMD_Modes[mode]["start"]()
-
+  Menu, Tray, Icon, %A_ScriptDir%\Images\%mode%.ico, 0, 1
 }
     
 ShowMessage(title, message, icon)
 {
   Run Utilities\SnarlCMD.exe snShowMessage 5 "%title%" "%message%" "%A_ScriptDir%\Images\%icon%",,UseErrorLevel
 }
+
+
+Capslock::
+  if (KMD_Mode != "disabled") {
+    KMD_SetMode("disabled")
+  } else {
+    ; set / toggle mode depending on Window?
+    KMD_SetMode("vi_normal_mode")
+  }
+return
 
 ; Boy this is insane!
 ; But its the onlsy modular way which came to my mind!
