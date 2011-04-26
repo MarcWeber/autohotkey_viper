@@ -91,7 +91,9 @@ ShowMessage(title, message, icon)
 
 
 Capslock::
-  if (KMD_Mode != "disabled") {
+  if (KMD_Mode == "vi_insert_mode"){
+    KMD_SetMode("vi_normal_mode")
+  }else if (KMD_Mode != "disabled") {
     KMD_SetMode("disabled")
   } else {
     ; set / toggle mode depending on Window?

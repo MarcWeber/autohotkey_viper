@@ -7,3 +7,15 @@ This is a rewrite of
   http://www.autohotkey.com/forum/topic44762.html
 
 cleaning up the code removing much repetition.
+
+
+TODO:
+implement searches:
+/?*# (depend on window. Probably ctl-f can be used almost everywhere, but setting forward / backward might be different)
+
+implement visual selection mode (needs state)
+
+
+implement things like { } etc. Strategy: Copy whole buffer to clipboard, use shift-END or such to find position of cursor
+using this "current" line calculate movement options
+
