@@ -4,8 +4,7 @@ windows as far as possible.
 Eg w es emulated by <c-right> and e is emulated by <c-right> <left>
 
 This is a rewrite of 
-  http://www.autohotkey.com/forum/topic44762.html
-
+  http://www.autohotkey.com/forum/topic44762.html 
 cleaning up the code removing much repetition.
 
 
@@ -16,6 +15,14 @@ implement searches:
 implement visual selection mode (needs state)
 
 
-implement things like { } etc. Strategy: Copy whole buffer to clipboard, use shift-END or such to find position of cursor
+implement things like { } etc. Strategy: Copy whole buffer to clipboard, use
+shift-END or such to find position of cursor
 using this "current" line calculate movement options
 
+
+
+Note: Don't think that this comes even close to Vim features. But it works everywhere
+
+
+TODO:
+- make it switch off vi mode if user changes app manually eg by alt-tab

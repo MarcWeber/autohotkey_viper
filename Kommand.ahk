@@ -106,6 +106,26 @@ return
 
 #if (KMD_SENDING == 0)
 
+Enter::
+  KMD_Modes[KMD_Mode]["handle_keys"]("{Enter}") 
+return
+-::
+  KMD_Modes[KMD_Mode]["handle_keys"]("-") 
+return
+/::
+  KMD_Modes[KMD_Mode]["handle_keys"]("/") 
+return
+*::
+  KMD_Modes[KMD_Mode]["handle_keys"]("*") 
+return
+?::
+  KMD_Modes[KMD_Mode]["handle_keys"]("?") 
+return
+#::
+  KMD_Modes[KMD_Mode]["handle_keys"]("#") 
+return
+
+
 0::
   KMD_Modes[KMD_Mode]["handle_keys"]("0")
 return
