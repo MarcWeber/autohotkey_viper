@@ -223,6 +223,7 @@ vi_normal_mode_handle_keys(key)
     } else 
     {
       api["goto_line"](vi_normal_mode["repeat_count"])
+      vi_normal_mode["repeat_count"] := 0
     }
     return
   }
@@ -277,6 +278,29 @@ vi_normal_mode_handle_keys(key)
     vi_normal_mode["repeat_count"] := vi_normal_mode["repeat_count"] * 10 + key
     return
   }
+
+  if (vi_normal_mode["last_chars"] == "d"){
+    if (key == "d"){
+      KMD_Send("{Home}+{Down}")
+    }
+    else if (key == "j"){
+      KMD_Send("{Home}+{Down}")
+      KMD_ViperDoRepeat("+{Down}")
+    }
+    else if (key == "k"){
+      KMD_Send("{Home}{Down}+{Up}")
+      KMD_ViperDoRepeat("+{Up}")
+    }
+    KMD_Send("{Del}")
+    vi_normal_mode["last_chars"] := ""
+    return
+  }
+  if (key == "d"){
+    vi_normal_mode["last_chars"] := "d"
+    return
+  }
+
+
   if (vi_normal_mode["simple_commands"].HasKey(key)) 
   {
     KMD_ViperDoRepeat(vi_normal_mode["simple_commands"][key])
