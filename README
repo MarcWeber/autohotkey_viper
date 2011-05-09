@@ -8,21 +8,17 @@ This is a rewrite of
 cleaning up the code removing much repetition.
 
 
-TODO:
-implement searches:
-/?*# (depend on window. Probably ctl-f can be used almost everywhere, but setting forward / backward might be different)
-
 implement visual selection mode (needs state)
-
 
 implement things like { } etc. Strategy: Copy whole buffer to clipboard, use
 shift-END or such to find position of cursor
 using this "current" line calculate movement options
 
 
-
 Note: Don't think that this comes even close to Vim features. But it works everywhere
 
+While this all is an option this prototype shows that even 20l is too slow to be of real use.
+You don't want to wait for your editor.
 
 TODO:
 - make it switch off vi mode if user changes app manually eg by alt-tab

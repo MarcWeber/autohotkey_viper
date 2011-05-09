@@ -118,6 +118,21 @@ return
 *::
   KMD_Modes[KMD_Mode]["handle_keys"]("*") 
 return
+,::
+  KMD_Modes[KMD_Mode]["handle_keys"](",") 
+return
+.::
+  KMD_Modes[KMD_Mode]["handle_keys"](".") 
+return
+_::
+  KMD_Modes[KMD_Mode]["handle_keys"]("_") 
+return
+!::
+  KMD_Modes[KMD_Mode]["handle_keys"]("") 
+return
+Space::
+  KMD_Modes[KMD_Mode]["handle_keys"]("{Space}") 
+return
 ?::
   KMD_Modes[KMD_Mode]["handle_keys"]("?") 
 return

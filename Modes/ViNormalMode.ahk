@@ -198,6 +198,23 @@ vi_normal_mode_handle_keys(key)
     return
   }
 
+  if (key == "+l"){
+    ; test: print location:
+    KMD_Send("+^{Home}")
+    clipboard = ; Emppty
+    KMD_Send("^c")
+    ClipWait, 2
+
+    StringSplit, output, clipboard, `n
+
+    output.MaxIndex()
+    c_col := StrLen(output%output0%)
+    api["goto_line"](output0)
+    KMD_Send("{Home}")
+    vi_normal_mode["repeat_count"] := c_col
+    KMD_ViperDoRepeat("{Right}")
+    return
+  }
 
   if (vi_normal_mode["last_chars"] == "g")
   {
